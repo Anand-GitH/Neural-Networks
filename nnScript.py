@@ -3,7 +3,7 @@ from scipy.optimize import minimize
 from scipy.io import loadmat
 from math import sqrt
 
-
+        
 def initializeWeights(n_in, n_out):
     """
     # initializeWeights return the random weights for Neural Network given the
@@ -25,7 +25,7 @@ def sigmoid(z):
     """# Notice that z can be a scalar, a vector or a matrix
     # return the sigmoid of input z"""
 
-    return 1/(1+np.exp(-z))
+    return 1/(1+np.exp(-1*z))
 
 
 def preprocess():
@@ -60,22 +60,22 @@ def preprocess():
         if "train" in mkey:
             if tcount1==0:
                 tdataset=mat.get(mkey)
-                tlabel=np.full((tdataset.shape[0],1),mkey[-1])
+                tlabel=np.full((tdataset.shape[0],1),int(mkey[-1]))
                 tcount1+=1
             else:
                 data=mat.get(mkey)
                 tdataset=np.vstack((tdataset,data))
-                tlabel=np.vstack((tlabel,np.full((data.shape[0],1),mkey[-1])))
+                tlabel=np.vstack((tlabel,np.full((data.shape[0],1),int(mkey[-1]))))
                 
         elif "test" in mkey:
             if tcount2==0:
                 testdat=mat.get(mkey)
-                testlbl=np.full((testdat.shape[0],1),mkey[-1])
+                testlbl=np.full((testdat.shape[0],1),int(mkey[-1]))
                 tcount2+=1
             else:
                 data=mat.get(mkey)
                 testdat=np.vstack((testdat,data))
-                testlbl=np.vstack((testlbl,np.full((data.shape[0],1),mkey[-1])))
+                testlbl=np.vstack((testlbl,np.full((data.shape[0],1),int(mkey[-1]))))
     
     indx=np.random.choice(tdataset.shape[0], tdataset.shape[0], replace=False)
     
@@ -85,10 +85,8 @@ def preprocess():
     validation_data=tdataset[indx[50000:60000],:]
     validation_label=tlabel[indx[50000:60000],:]
     
-    indx=np.random.choice(testdat.shape[0], testdat.shape[0], replace=False)
-    
-    test_data=testdat[indx,:]
-    test_label=testlbl[indx,:]
+    test_data=testdat
+    test_label=testlbl
 
     # Feature selection # Eliminate the features which does not add variations in dataset
     elim_cols=[]
@@ -99,11 +97,14 @@ def preprocess():
             elim_cols.append(i)
     
     for i in range(len(elim_cols)):
-        train_data      = np.delete(train_data,elim_cols[i]-i,1)
-        validation_data = np.delete(validation_data,elim_cols[i]-i,1)
-        test_data       = np.delete(test_data,elim_cols[i]-i,1)
+        train_data      = np.delete(train_data,elim_cols[i]-i,axis=1)
+        validation_data = np.delete(validation_data,elim_cols[i]-i,axis=1)
+        test_data       = np.delete(test_data,elim_cols[i]-i,axis=1)
     
 
+    train_label     = train_label.reshape(-1)
+    validation_label= validation_label.reshape(-1)
+    test_label      = test_label.reshape(-1)
     print('preprocess done')
 
     return train_data, train_label, validation_data, validation_label, test_data, test_label
@@ -158,7 +159,7 @@ def nnObjFunction(params, *args):
     training_data=np.hstack((training_data,np.ones((training_data.shape[0],1)))) #adding bias to the input layer
     
     #output at first hidden layer
-    aj=train_data @ w1.transpose()
+    aj=training_data @ w1.transpose()
     
     #Sigmoid activation function at hidden layer
     zj=sigmoid(aj)
@@ -182,7 +183,7 @@ def nnObjFunction(params, *args):
         
     
     #Error function as negative log likelihood
-    error=np.sum( (yl @ np.log(ol)) + ((1-yl) @ np.log(1-ol)))/training_label.shape[0]
+    error=np.sum( np.multiply(yl,np.log(ol)) + np.multiply((1-yl),np.log(1-ol)))/training_label.shape[0]
     error=np.negative(error)
     
     
@@ -198,13 +199,13 @@ def nnObjFunction(params, *args):
     grad_w1  = grad_w1[0:n_hidden,:]
     
     #Regularization - Lambda to control the value of weights to reduce overfitting
-    sqrdw1=np.sum(np.square(w1))
-    sqrdw2=np.sum(np.square(w2))
-    
-    regpart=lambdaval*(sqrdw1+sqrdw2)/(2*train_data.shape[0])
+    regpart=lambdaval*(np.sum(np.square(w1))+np.sum(np.square(w2)))/(2*training_data.shape[0])
     
     ##Error + regularization
     obj_val=error+regpart
+    
+    grad_w1 = (grad_w1 + (lambdaval*w1))/training_data.shape[0]
+    grad_w2 = (grad_w2 + (lambdaval*w2))/training_data.shape[0]
 
     # Make sure you reshape the gradient matrices to a 1D array. for instance if your gradient matrices are grad_w1 and grad_w2
     # you would use code similar to the one below to create a flat array
@@ -298,7 +299,6 @@ w2 = nn_params.x[(n_hidden * (n_input + 1)):].reshape((n_class, (n_hidden + 1)))
 predicted_label = nnPredict(w1, w2, train_data)
 
 # find the accuracy on Training Dataset
-
 print('\n Training set Accuracy:' + str(100 * np.mean((predicted_label == train_label).astype(float))) + '%')
 
 predicted_label = nnPredict(w1, w2, validation_data)

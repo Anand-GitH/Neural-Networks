@@ -28,7 +28,7 @@ def sigmoid(z):
     """# Notice that z can be a scalar, a vector or a matrix
     # return the sigmoid of input z"""
 
-    return 1/(1+np.exp(-z))
+    return 1/(1+np.exp(-1*z))
     
     
 # Replace this with your nnObjFunction implementation
@@ -81,7 +81,7 @@ def nnObjFunction(params, *args):
     training_data=np.hstack((training_data,np.ones((training_data.shape[0],1)))) #adding bias to the input layer
     
     #output at first hidden layer
-    aj=train_data @ w1.transpose()
+    aj=training_data @ w1.transpose()
     
     #Sigmoid activation function at hidden layer
     zj=sigmoid(aj)
@@ -105,7 +105,7 @@ def nnObjFunction(params, *args):
         
     
     #Error function as negative log likelihood
-    error=np.sum( (yl @ np.log(ol)) + ((1-yl) @ np.log(1-ol)))/training_label.shape[0]
+    error=np.sum( np.multiply(yl,np.log(ol)) + np.multiply((1-yl),np.log(1-ol)))/training_label.shape[0]
     error=np.negative(error)
     
     
@@ -115,19 +115,19 @@ def nnObjFunction(params, *args):
     grad_w2= np.dot(deltal.transpose(),zj)
     
     #wrt w1 - input layer weights
-    zprod   = (1 - zj) * zj
+    zprod    = (1 - zj) * zj
     zdeltaw2 = ((np.dot(deltal,w2))*zprod)
-    grad_w1 = np.dot(zdeltaw2.transpose(),training_data)
-    grad_w1 = grad_w1[0:n_hidden,:]
+    grad_w1  = np.dot(zdeltaw2.transpose(),training_data)
+    grad_w1  = grad_w1[0:n_hidden,:]
     
     #Regularization - Lambda to control the value of weights to reduce overfitting
-    sqrdw1=np.sum(np.square(w1))
-    sqrdw2=np.sum(np.square(w2))
-    
-    regpart=lambdaval*(sqrdw1+sqrdw2)/(2*train_data.shape[0])
+    regpart=lambdaval*(np.sum(np.square(w1))+np.sum(np.square(w2)))/(2*training_data.shape[0])
     
     ##Error + regularization
     obj_val=error+regpart
+    
+    grad_w1 = (grad_w1 + (lambdaval*w1))/training_data.shape[0]
+    grad_w2 = (grad_w2 + (lambdaval*w2))/training_data.shape[0]
 
     # Make sure you reshape the gradient matrices to a 1D array. for instance if your gradient matrices are grad_w1 and grad_w2
     # you would use code similar to the one below to create a flat array
