@@ -4,6 +4,9 @@ Comparing single layer MLP with deep MLP (using TensorFlow)
 
 import numpy as np
 import pickle
+from math import sqrt
+from scipy.optimize import minimize
+import time
 
 # Do not change this
 def initializeWeights(n_in,n_out):
@@ -211,7 +214,12 @@ args = (n_input, n_hidden, n_class, train_data, train_label, lambdaval)
 #Train Neural Network using fmin_cg or minimize from scipy,optimize module. Check documentation for a working example
 opts = {'maxiter' :50}    # Preferred value.
 
+start_time = time.time()
 nn_params = minimize(nnObjFunction, initialWeights, jac=True, args=args,method='CG', options=opts)
+end_time = time.time()
+timediff=int(round(end_time-start_time))
+print('Time taken to train:',timediff)
+
 params = nn_params.get('x')
 #Reshape nnParams from 1D vector into w1 and w2 matrices
 w1 = params[0:n_hidden * (n_input + 1)].reshape( (n_hidden, (n_input + 1)))

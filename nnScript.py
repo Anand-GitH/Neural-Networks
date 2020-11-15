@@ -90,11 +90,15 @@ def preprocess():
 
     # Feature selection # Eliminate the features which does not add variations in dataset
     elim_cols=[]
+    global featuressel
+    featuressel=[]
     
     for i in range(tdataset.shape[1]):
         unique,count=np.unique(tdataset[:,i],return_counts=True)
         if len(unique)==1 and len(count)==1 and unique[0]==0:
             elim_cols.append(i)
+        else:
+            featuressel.append(i)
     
     for i in range(len(elim_cols)):
         train_data      = np.delete(train_data,elim_cols[i]-i,axis=1)
@@ -275,7 +279,7 @@ initial_w2 = initializeWeights(n_hidden, n_class)
 initialWeights = np.concatenate((initial_w1.flatten(), initial_w2.flatten()), 0)
 
 # set the regularization hyper-parameter
-lambdaval = 0
+lambdaval = 15
 
 args = (n_input, n_hidden, n_class, train_data, train_label, lambdaval)
 
@@ -312,3 +316,8 @@ predicted_label = nnPredict(w1, w2, test_data)
 # find the accuracy on Validation Dataset
 
 print('\n Test set Accuracy:' + str(100 * np.mean((predicted_label == test_label).astype(float))) + '%')
+
+
+#Create implemented parameter file
+#pvals=[featuressel,n_hidden, w1, w2, lambdaval]
+#pickle.dump(pvals, open('params.pickle', 'wb'))
